@@ -4,7 +4,7 @@ import axios from 'axios';
 const Classes = () => {
     const [classes, setClasses] = useState([]);
     const [teachers, setTeachers] = useState([]);
-    const [newClass, setNewClass] = useState({ class_name: '', teacher_id: '', shift: 'Morning', capacity: 0 });
+    const [newClass, setNewClass] = useState({ class_name: '', teacher_id: '', shift: 'الصباح', capacity: 0 });
     const [editingId, setEditingId] = useState(null);
 
     const API_URL = 'http://localhost:5000/api';
@@ -51,9 +51,14 @@ const Classes = () => {
                     <option value="">Dooro Macallin</option>
                     {teachers.map(t => <option key={t.id || t.teacher_id} value={t.id || t.teacher_id}>{t.full_name}</option>)}
                 </select>
-                <select className="border p-2 rounded-lg" value={newClass.shift} onChange={e => setNewClass({...newClass, shift: e.target.value})}>
-                    <option value="Morning">Subax</option>
-                    <option value="Afternoon">Duhur</option>
+                <select 
+                    className="border p-2 rounded-lg font-bold" 
+                    value={newClass.shift} 
+                    onChange={e => setNewClass({...newClass, shift: e.target.value})}
+                >
+                    <option value="الصباح">الصباح (Subax)</option>
+                    <option value="المساء">المساء (Galab)</option>
+                    <option value="كل وقت">كل وقت (Full Time)</option>
                 </select>
                 <input type="number" className="border p-2 rounded-lg" placeholder="Capacity" value={newClass.capacity} onChange={e => setNewClass({...newClass, capacity: e.target.value})} />
                 <button className="bg-blue-600 text-white rounded-lg font-bold">{editingId ? 'Cusboonaysii' : 'Keydi'}</button>

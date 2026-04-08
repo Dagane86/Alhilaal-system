@@ -166,8 +166,8 @@ const Attendance = () => {
               >
                 <option value="Subax">Subax</option>
                 <option value="Barqo">Barqo</option>
-                <option value="Galab">Galab</option>
               </select>
+                <option value="Galab">Galab</option>
             </div>
 
             <div className="flex items-end">

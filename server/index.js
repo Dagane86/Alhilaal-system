@@ -1,15 +1,106 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { connectDB, db } from './db.js';
-import { classes, teachers, students, families, payments, expenses , attendance } from './schema.js';
-import { eq, desc, sql, and } from 'drizzle-orm'; // 'and' halkan ku dar
-
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { connectDB, db, query } from './db.js';
+import { classes, teachers, students, families, payments, expenses, attendance, user } from './schema.js';
+import { eq, desc, sql, and, or } from 'drizzle-orm'; // 'or' halkan ku dar
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+const JWT_SECRET = process.env.JWT_SECRET || 'AL_HILAAL_SECRET_2026';
+
+// Seed default admin user
+const seedAdminUser = async () => {
+  try {
+    const existingAdmin = await db.select().from(user).where(eq(user.username, 'admin')).limit(1);
+    if (existingAdmin.length === 0) {
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      await db.insert(user).values({
+        id: 'admin-001',
+        name: 'Administrator',
+        email: 'admin@alhilaal.edu',
+        username: 'admin',
+        password: hashedPassword,
+        role: 'admin',
+      });
+      console.log('✅ Default admin user created: admin / admin123');
+    }
+  } catch (error) {
+    console.error('❌ Error seeding admin user:', error);
+  }
+};
+
+// ==========================================
+// 1. LOGIN API (Authentication)
+// ==========================================
+const loginHandler = async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username?.trim() || !password) {
+    return res.status(400).json({ success: false, message: 'Fadlan gali username iyo password.' });
+  }
+
+  try {
+    const foundUser = await db
+      .select()
+      .from(user)
+      .where(eq(user.username, username.trim()))
+      .limit(1);
+
+    if (!foundUser || foundUser.length === 0) {
+      return res.status(401).json({ success: false, message: 'Username ama Password khaldan!' });
+    }
+
+    const currentUser = foundUser[0];
+
+    // 2. FIX: Compare the sent password with the database password
+    // Use bcrypt.compare(plainTextPassword, hashedDatabasePassword)
+    const isMatch = await bcrypt.compare(password, currentUser.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Username ama Password khaldan!' });
+    }
+
+    // 3. Generate Token
+    const token = jwt.sign(
+      { id: currentUser.id, role: currentUser.role, email: currentUser.email },
+      JWT_SECRET,
+      { expiresIn: '12h' },
+    );
+
+    return res.json({
+      success: true,
+      token,
+      user: {
+        id: currentUser.id,
+        name: currentUser.name,
+        role: currentUser.role,
+        email: currentUser.email,
+        username: currentUser.username,
+      },
+    });
+  } catch (error) {
+    console.error('Login Error:', error);
+    return res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+app.post('/api/login', loginHandler);
+app.post('/api/auth/login', loginHandler);
+
+// ==========================================
+// 2. LOGOUT API
+// ==========================================
+app.post('/api/logout', (req, res) => {
+  // In a stateless JWT system, logout is handled on the client side
+  // by removing the token from localStorage
+  res.json({ success: true, message: 'Logged out successfully' });
+});
 
 const mapTeacherRow = (row) => ({
   teacher_id: row.id,
@@ -23,6 +114,7 @@ const mapTeacherRow = (row) => ({
 });
 
 const mapStudentRow = (row) => ({
+  id: row.id,
   student_id: row.id,
   full_name: row.full_name,
   registration_date: row.registration_date,
@@ -32,7 +124,9 @@ const mapStudentRow = (row) => ({
   parent_phone: row.parent_phone,
   level: row.level,
   shift: row.shift,
+  student_stage: row.student_stage || 'Bilaaw',
   monthly_fee: row.monthly_fee,
+  class_id: row.class_id,
   created_at: row.created_at,
   updated_at: row.updated_at,
 });
@@ -40,34 +134,63 @@ const mapStudentRow = (row) => ({
 // ==========================================
 // 1. DASHBOARD (SAXID)
 // ==========================================
-app.get('/api/dashboard', async (req, res) => {
+app.get('/api/dashboard/extra', async (req, res) => {
   try {
-    // 1. Tirada Guud
-    const [sCount] = await db.select({ count: sql`count(*)::int` }).from(students);
-    const [tCount] = await db.select({ count: sql`count(*)::int` }).from(teachers);
-    const [cCount] = await db.select({ count: sql`count(*)::int` }).from(classes);
 
-    // 2. Xaadirinta Maanta (Today's Date format: YYYY-MM-DD)
-    const maanta = new Date().toISOString().split('T')[0];
+    // Wiilal & Gabdho
+    const boys = await db.select({ count: sql`count(*)::int` })
+      .from(students)
+      .where(sql`gender = 'male'`);
 
-    const [present] = await db.select({ count: sql`count(*)::int` })
-      .from(attendance)
-      .where(sql`attendance_date = ${maanta} AND status = 'Present'`);
-    
-    const [absent] = await db.select({ count: sql`count(*)::int` })
-      .from(attendance)
-      .where(sql`attendance_date = ${maanta} AND status = 'Absent'`);
+    const girls = await db.select({ count: sql`count(*)::int` })
+      .from(students)
+      .where(sql`gender = 'female'`);
+
+    // Families (unique parent_phone)
+    const families = await db.select({
+      count: sql`count(distinct parent_phone)::int`
+    }).from(students);
 
     res.json({
-      totalStudents: sCount?.count || 0,
-      totalTeachers: tCount?.count || 0,
-      totalClasses: cCount?.count || 0,
-      presentToday: present?.count || 0,
-      absentToday: absent?.count || 0,
+      boys: boys[0]?.count || 0,
+      girls: girls[0]?.count || 0,
+      families: families[0]?.count || 0
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
+// DASHBOARD SUMMARY
+// ==========================================
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    const totalStudents = await db.select({ count: sql`count(*)::int` }).from(students);
+    const totalTeachers = await db.select({ count: sql`count(*)::int` }).from(teachers);
+    const totalClasses = await db.select({ count: sql`count(*)::int` }).from(classes);
+
+    const today = new Date().toISOString().split('T')[0];
+    const presentToday = await db
+      .select({ count: sql`count(*)::int` })
+      .from(attendance)
+      .where(sql`attendance_date = ${today} AND status = 'Present'`);
+
+    const absentToday = await db
+      .select({ count: sql`count(*)::int` })
+      .from(attendance)
+      .where(sql`attendance_date = ${today} AND status = 'Absent'`);
+
+    res.json({
+      totalStudents: totalStudents[0]?.count || 0,
+      totalTeachers: totalTeachers[0]?.count || 0,
+      totalClasses: totalClasses[0]?.count || 0,
+      presentToday: presentToday[0]?.count || 0,
+      absentToday: absentToday[0]?.count || 0,
     });
   } catch (err) {
-    console.error("Backend Error:", err);
-    res.status(500).json({ error: "Server Error: " + err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 // ==========================================
@@ -158,14 +281,48 @@ app.get('/api/students/:id', async (req, res) => {
   try {
     const [student] = await db.select().from(students).where(eq(students.id, Number(req.params.id))).limit(1);
     if (!student) return res.status(404).json({ message: 'Student not found' });
-    res.json(mapStudentRow(student));
+
+    // Fetch payments for this student's parent
+    const studentPayments = await db
+      .select()
+      .from(payments)
+      .where(eq(payments.parent_phone, student.parent_phone))
+      .orderBy(desc(payments.payment_date));
+
+    // Fetch attendance summary for this student
+    const attendanceRecords = await db
+      .select()
+      .from(attendance)
+      .where(eq(attendance.student_id, student.id));
+
+    const presentDays = attendanceRecords.filter(a => a.status === 'Present').length;
+    const absentDays = attendanceRecords.filter(a => a.status === 'Absent').length;
+    const totalDays = attendanceRecords.length;
+    const attendanceRate = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
+
+    const studentData = mapStudentRow(student);
+    studentData.payments = studentPayments.map(p => ({
+      id: p.id,
+      amount: p.amount_paid,
+      payment_date: p.payment_date,
+      payment_month: p.month_for,
+      method: p.payment_type || 'Cash',
+      notes: p.notes,
+    }));
+    studentData.attendance = {
+      presentDays,
+      absentDays,
+      attendanceRate,
+    };
+
+    res.json(studentData);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 app.post('/api/students', async (req, res) => {
-  const { full_name, registration_date, gender, parent_name, relation, parent_phone, level, shift, monthly_fee, class_id } = req.body;
+  const { full_name, registration_date, gender, parent_name, relation, parent_phone, level, shift, student_stage, monthly_fee, class_id } = req.body;
   try {
     const [student] = await db.insert(students).values({
       full_name,
@@ -176,6 +333,7 @@ app.post('/api/students', async (req, res) => {
       parent_phone,
       level,
       shift,
+      student_stage: student_stage || 'Bilaaw',
       monthly_fee: monthly_fee ? Number(monthly_fee) : 0,
       class_id: class_id ? Number(class_id) : null,
     }).returning();
@@ -186,7 +344,7 @@ app.post('/api/students', async (req, res) => {
 });
 
 app.put('/api/students/:id', async (req, res) => {
-  const { full_name, registration_date, gender, parent_name, relation, parent_phone, level, shift, monthly_fee, class_id } = req.body;
+  const { full_name, registration_date, gender, parent_name, relation, parent_phone, level, shift, student_stage, monthly_fee, class_id } = req.body;
   try {
     const [updated] = await db.update(students)
       .set({
@@ -198,6 +356,7 @@ app.put('/api/students/:id', async (req, res) => {
         parent_phone,
         level,
         shift,
+        student_stage: student_stage || 'Bilaaw',
         monthly_fee: monthly_fee ? Number(monthly_fee) : 0,
         class_id: class_id ? Number(class_id) : null,
       })
@@ -312,7 +471,7 @@ app.post('/api/attendance', async (req, res) => {
       shift: shift || 'Subax',
       attendance_date: safeDate, // Database-ka wuxuu u baahan yahay Date kaliya
       status: r.status || 'Present',
-      notes: r.notes || ''
+      notes: r.notes ?? null // Hubi in notes aysan undefined noqon, keydi null haddii bannaan
     }));
 
     await db
@@ -360,7 +519,8 @@ app.get('/api/attendance/report', async (req, res) => {
         class_name: classes.class_name,
         status: attendance.status,
         shift: attendance.shift,
-        attendance_date: attendance.attendance_date
+        attendance_date: attendance.attendance_date,
+        notes: attendance.notes
       })
       .from(attendance)
       .leftJoin(students, eq(attendance.student_id, students.id))
@@ -368,12 +528,7 @@ app.get('/api/attendance/report', async (req, res) => {
       .where(and(...whereConditions))
       .orderBy(desc(attendance.id));
 
-    res.json(
-      reportData.map((item) => ({
-        ...item,
-        notes: null
-      }))
-    );
+    res.json(reportData);
   } catch (err) {
     console.error('Attendance Report Server Error:', err);
     res.status(500).json({
@@ -919,6 +1074,7 @@ app.get('/api/admin/reports', async (req, res) => {
     res.status(500).json({ error: err.message || 'Server error' });
   }
 });
+
 // ==========================================
 // SERVER START
 // ==========================================
@@ -926,7 +1082,9 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, async () => {
   try {
     await connectDB();
-    console.log(`🚀 Server-ku wuxuu si guul leh ugu socdaa: http://localhost:${PORT}`);
+    await query("ALTER TABLE students ADD COLUMN IF NOT EXISTS student_stage TEXT DEFAULT 'Bilaaw';");
+    await seedAdminUser();
+    console.log(`🚀 Server ka si guul ayuu u kacay: http://localhost:${PORT}`);
   } catch (error) {
     console.error('error connecting to db', error);
   }

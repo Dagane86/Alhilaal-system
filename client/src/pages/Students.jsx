@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2'; // 1. Soo dhex gasho Swal
 
 const Students = ({ editingId, onSuccess }) => {
     const API_URL = 'http://localhost:5000/api';
@@ -18,7 +19,8 @@ const Students = ({ editingId, onSuccess }) => {
         parent_phone: '', 
         level: '', // Tani waxay hadda noqonaysaa Class Name-ka la doorto
         shift: 'Morning', 
-        monthly_fee: ''
+        monthly_fee: '',
+        student_stage: 'Bilaaw'
     });
 
     // 1. Soo qaado liiska fasallada markii bogga la furo
@@ -51,6 +53,7 @@ const Students = ({ editingId, onSuccess }) => {
                     parent_phone: s.parent_phone || '',
                     level: s.level || '',
                     shift: s.shift || 'Morning',
+                    student_stage: s.student_stage || 'Bilaaw',
                     monthly_fee: s.monthly_fee || ''
                 });
             } catch (err) {
@@ -66,8 +69,39 @@ const Students = ({ editingId, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // 1. Kaliya hubi haddii ay tahay diwaangalin cusub (New Registration)
+        if (!editingId) {
+            try {
+                // Soo qaado dhammaan ardayda si aad u is barbar dhigto
+                const res = await axios.get('http://localhost:5000/api/students');
+                const allStudents = res.data;
+
+                // Hubi haddii uu jiro arday leh isku Magac iyo isku Taleefan waalid
+                const isDuplicate = allStudents.some(student => 
+                    student.full_name.toLowerCase().trim() === formData.full_name.toLowerCase().trim() &&
+                    student.parent_phone.trim() === formData.parent_phone.trim()
+                );
+
+                if (isDuplicate) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Looma oggola!',
+                        text: 'Ardaygan iyo waalidkan horay ayaa nidaamka loogu diwaangaliyay.',
+                        confirmButtonColor: '#1e3a8a',
+                        confirmButtonText: 'Hadda fahmay'
+                    });
+                    return; // Halkan ku jooji koodka
+                }
+            } catch (err) {
+                console.error("Qalad ayaa ka dhacay hubinta dublication-ka:", err);
+            }
+        }
+
+        // 2. Haddii xogtu tahay mid cusub, u gudbi keydinta
         const dataToSubmit = {
             ...formData,
+            student_stage: formData.student_stage || 'Bilaaw',
             monthly_fee: formData.monthly_fee === '' ? 0 : parseFloat(formData.monthly_fee),
             class_id: selectedClassId || null
         };
@@ -75,16 +109,35 @@ const Students = ({ editingId, onSuccess }) => {
         try {
             if (editingId) {
                 await axios.put(`http://localhost:5000/api/students/${editingId}`, dataToSubmit);
-                alert("✅ Xogta ardayga waa la cusboonaysiiyay!");
+                // 3. Alert-ka Guusha (Edit)
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Waa la cusboonaysiiyay',
+                    text: 'Xogta ardayga waa la beddelay!',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
             } else {
                 const res = await axios.post('http://localhost:5000/api/students', dataToSubmit);
-                alert("✅ " + res.data.message);
+                // 4. Alert-ka Guusha (Save)
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Waa la diwaangaliyay',
+                    text: 'Ardayga cusub si guul leh ayaa loogu daray!',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
             }
 
             if (onSuccess) onSuccess();
         } catch (error) {
-            console.error(error);
-            alert("❌ Qalad: " + (error.response?.data?.error || "Server Error"));
+            // 5. Alert-ka Qaladka (Server Error)
+            Swal.fire({
+                icon: 'error',
+                title: 'Qalad!',
+                text: error.response?.data?.error || "Cillad ayaa dhacday server-ka.",
+                confirmButtonColor: '#d33'
+            });
         }
     };
 
@@ -133,6 +186,19 @@ const Students = ({ editingId, onSuccess }) => {
                             Waxaa la doortay: <strong>{selectedClassInfo.class_name}</strong> (Macallin: {selectedClassInfo.teacher_name || 'Lama meeleyn'})
                         </p>
                     )}
+                </div>
+
+                <div className="col-span-2 md:col-span-1">
+                    <label className="block mb-1 font-bold text-gray-600 italic">مرحلة الطالب (Marxaladda)</label>
+                    <select
+                        value={formData.student_stage}
+                        className="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50"
+                        onChange={e => setFormData({...formData, student_stage: e.target.value})}
+                    >
+                        <option value="Bilaaw">القراءة والكتابة (Alqira wal Kitaaba)</option>
+                        <option value="Xifdi"> تحفيظ القرآن الكريم(Xifdi)</option>
+                        <option value="Qatmi">ختم القرآن الكريم(Qatmi)</option>
+                    </select>
                 </div>
 
                 <div>

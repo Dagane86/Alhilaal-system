@@ -15,7 +15,9 @@ import {
   X,
   ArrowDownCircle,
   ArrowUpCircle,
-  BarChart3 // Icon-ka cusub ee Reports
+  BarChart3, // Icon-ka cusub ee Reports
+  LogOut, // Logout icon
+  User // For Student Details
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -25,11 +27,18 @@ const Sidebar = () => {
   // Maamulidda Menu-yada hoos u dhaca (Dropdowns)
   const [attendanceOpen, setAttendanceOpen] = useState(location.pathname.includes('/attendance'));
   const [accountingOpen, setAccountingOpen] = useState(location.pathname.includes('/accounting'));
+  const [studentsOpen, setStudentsOpen] = useState(location.pathname.includes('/students'));
 
   const isActive = (path) => location.pathname === path;
 
   const closeSidebar = () => {
     if (window.innerWidth < 1024) setIsOpen(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
   };
 
   return (
@@ -57,16 +66,17 @@ const Sidebar = () => {
         dir="rtl"
       >
         {/* Header */}
-        <div className="p-5 border-b border-blue-700 text-center">
-          <div className="w-16 h-16 mx-auto bg-white rounded-xl flex items-center justify-center mb-3 shadow-md">
+        <div className="p-6 border-b border-blue-700 text-center">
+          {/* Qaybta Logo-ga oo la weyneeyay */}
+          <div className="w-28 h-28 mx-auto bg-white rounded-full flex items-center justify-center mb-4 shadow-2xl border-4 border-yellow-400 overflow-hidden">
             <img
-              src="https://cdn-icons-png.flaticon.com/512/2232/2232688.png"
-              className="w-10"
-              alt="Logo"
+              src="/logo.png"
+              className="w-full h-full object-contain p-1"
+              alt="Alhilal Logo"
             />
           </div>
-          <h2 className="text-lg font-bold text-yellow-400 font-arabic">مدرسة الهلال</h2>
-          <p className="text-xs text-blue-200">School Management System</p>
+          <h2 className="text-xl font-bold text-yellow-400 font-arabic tracking-wide">مدرسة الهلال</h2>
+          <p className="text-[10px] text-blue-200 uppercase mt-1 tracking-tighter">School Management System</p>
         </div>
 
         {/* Navigation Links */}
@@ -74,7 +84,27 @@ const Sidebar = () => {
           <NavItem to="/" label="لوحة التحكم" icon={<LayoutDashboard />} active={isActive('/')} onClick={closeSidebar} />
           <NavItem to="/teacher-list" label="المعلمين" icon={<Users />} active={isActive('/teacher-list')} onClick={closeSidebar} />
           <NavItem to="/classes" label="الفصول" icon={<School />} active={isActive('/classes')} onClick={closeSidebar} />
-          <NavItem to="/students" label="الطلاب" icon={<GraduationCap />} active={isActive('/students')} onClick={closeSidebar} />
+
+          {/* Students Dropdown */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setStudentsOpen(!studentsOpen)}
+              className={`flex justify-between items-center w-full p-3 rounded-lg transition-colors hover:bg-blue-700 ${studentsOpen ? 'bg-blue-800/50' : ''}`}
+            >
+              <div className="flex gap-3 items-center">
+                <GraduationCap className={studentsOpen ? 'text-yellow-400' : 'text-white'} />
+                <span>الطلاب</span>
+              </div>
+              {studentsOpen ? <ChevronDown size={18} /> : <ChevronLeft size={18} />}
+            </button>
+
+            {studentsOpen && (
+              <div className="mr-6 space-y-1 border-r-2 border-blue-700/50 pr-2 transition-all">
+                <SubItem to="/students" label="قائمة الطلاب" icon={<GraduationCap size={14} />} active={isActive('/students')} onClick={closeSidebar} />
+                <SubItem to="/students/details" label="تفاصيل الطالب" icon={<User size={14} />} active={isActive('/students/details')} onClick={closeSidebar} />
+              </div>
+            )}
+          </div>
 
           {/* Attendance Dropdown */}
           <div className="space-y-1">
@@ -122,8 +152,19 @@ const Sidebar = () => {
         </nav>
 
         {/* Footer Settings */}
-        <div className="p-4 border-t border-blue-700">
+        <div className="p-4 border-t border-blue-700 space-y-2">
           <NavItem to="/settings" label="الإعدادات" icon={<Settings />} active={isActive('/settings')} onClick={closeSidebar} />
+          
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center w-full p-3 rounded-lg transition-all duration-200 hover:bg-red-600 text-white"
+          >
+            <div className="flex items-center gap-3">
+              <LogOut size={20} />
+              <span>تسجيل الخروج</span>
+            </div>
+          </button>
         </div>
       </aside>
     </>

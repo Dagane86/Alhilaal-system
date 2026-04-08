@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS students (
   parent_phone TEXT,
   level TEXT,
   shift TEXT,
+  student_stage TEXT DEFAULT 'Bilaaw',
   monthly_fee NUMERIC(12,2) DEFAULT 0,
   class_id INTEGER REFERENCES classes(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),

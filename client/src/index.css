@@ -4,6 +4,9 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Amiri&family=Cairo:wght@400;700&display=swap');
 
+/* React Toastify CSS */
+@import 'react-toastify/dist/ReactToastify.css';
+
 body {
   font-family: 'Cairo', sans-serif;
   margin: 0;
