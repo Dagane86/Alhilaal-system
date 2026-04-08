@@ -18,7 +18,7 @@ const Teachers = ({ editingId, onSuccess }) => {
         if (!editingId) return;
         const fetchTeacherDetail = async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/teachers/${editingId}`);
+                const res = await axios.get(`https://al-hilaal-vercel-server.vercel.app/api/teachers/${editingId}`);
                 const data = res.data;
                 setFormData({
                     full_name: data.full_name || '',
@@ -40,10 +40,10 @@ const Teachers = ({ editingId, onSuccess }) => {
         e.preventDefault();
         try {
             if (editingId) {
-                await axios.put(`http://localhost:5000/api/teachers/${editingId}`, formData);
+                await axios.put(`https://al-hilaal-vercel-server.vercel.app/api/teachers/${editingId}`, formData);
                 Swal.fire({ icon: 'success', title: 'Waa la cusboonaysiiyay!', timer: 1500, showConfirmButton: false });
             } else {
-                await axios.post('http://localhost:5000/api/teachers', formData);
+                await axios.post('https://al-hilaal-vercel-server.vercel.app/api/teachers', formData);
                 Swal.fire({ icon: 'success', title: 'Macallin waa la daray!', timer: 1500, showConfirmButton: false });
             }
             onSuccess();

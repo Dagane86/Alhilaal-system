@@ -9,7 +9,7 @@ import {
   Wallet
 } from 'lucide-react';
 
-const API = 'http://localhost:5000';
+const API = 'https://al-hilaal-vercel-server.vercel.app';
 
 const Reports = () => {
   const [payments, setPayments] = useState([]);

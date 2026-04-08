@@ -9,7 +9,7 @@ const TeacherList = () => {
 
     const fetchTeachers = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/teachers');
+            const res = await axios.get('https://al-hilaal-vercel-server.vercel.app/api/teachers');
             setTeachers(res.data);
         } catch (err) { console.error(err); }
     };
@@ -24,7 +24,7 @@ const TeacherList = () => {
     const handleDelete = async (id) => {
         if (window.confirm("Ma hubtaa inaad tirtirto?")) {
             try {
-                await axios.delete(`http://localhost:5000/api/teachers/${id}`);
+                await axios.delete(`https://al-hilaal-vercel-server.vercel.app/api/teachers/${id}`);
                 fetchTeachers();
             } catch (err) {
                 console.error(err);

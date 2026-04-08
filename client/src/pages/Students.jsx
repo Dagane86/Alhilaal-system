@@ -3,7 +3,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2'; // 1. Soo dhex gasho Swal
 
 const Students = ({ editingId, onSuccess }) => {
-    const API_URL = 'http://localhost:5000/api';
+    const API_URL = 'https://al-hilaal-vercel-server.vercel.app/api';
     const today = new Date().toISOString().split('T')[0];
 
     // State-ka lagu kaydinayo fasallada ka imaanaya DB
@@ -27,7 +27,7 @@ const Students = ({ editingId, onSuccess }) => {
     useEffect(() => {
         const fetchClasses = async () => {
             try {
-                const res = await axios.get('http://localhost:5000/api/classes');
+                const res = await axios.get('https://al-hilaal-vercel-server.vercel.app/api/classes');
                 setClasses(res.data);
             } catch (err) {
                 console.error("Fasallada lama soo saari karo:", err);
@@ -42,7 +42,7 @@ const Students = ({ editingId, onSuccess }) => {
 
         const fetchStudentDetail = async () => {
             try {
-                const res = await axios.get(`http://localhost:5000/api/students/${editingId}`);
+                const res = await axios.get(`https://al-hilaal-vercel-server.vercel.app/api/students/${editingId}`);
                 const s = res.data;
                 setFormData({
                     full_name: s.full_name || '',
@@ -74,7 +74,7 @@ const Students = ({ editingId, onSuccess }) => {
         if (!editingId) {
             try {
                 // Soo qaado dhammaan ardayda si aad u is barbar dhigto
-                const res = await axios.get('http://localhost:5000/api/students');
+                const res = await axios.get('https://al-hilaal-vercel-server.vercel.app/api/students');
                 const allStudents = res.data;
 
                 // Hubi haddii uu jiro arday leh isku Magac iyo isku Taleefan waalid
@@ -108,7 +108,7 @@ const Students = ({ editingId, onSuccess }) => {
 
         try {
             if (editingId) {
-                await axios.put(`http://localhost:5000/api/students/${editingId}`, dataToSubmit);
+                await axios.put(`https://al-hilaal-vercel-server.vercel.app/api/students/${editingId}`, dataToSubmit);
                 // 3. Alert-ka Guusha (Edit)
                 Swal.fire({
                     icon: 'success',
@@ -118,7 +118,7 @@ const Students = ({ editingId, onSuccess }) => {
                     showConfirmButton: false
                 });
             } else {
-                const res = await axios.post('http://localhost:5000/api/students', dataToSubmit);
+                const res = await axios.post('https://al-hilaal-vercel-server.vercel.app/api/students', dataToSubmit);
                 // 4. Alert-ka Guusha (Save)
                 Swal.fire({
                     icon: 'success',

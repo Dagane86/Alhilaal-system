@@ -17,7 +17,7 @@ const ExpensesPage = () => {
     // Soo aqri xogta kharashyada
     const fetchExpenses = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/expenses');
+            const res = await axios.get('https://al-hilaal-vercel-server.vercel.app/api/expenses');
             setExpenses(res.data);
         } catch (err) {
             console.error("Error fetching expenses:", err);
@@ -34,7 +34,7 @@ const ExpensesPage = () => {
 
         try {
             setLoading(true);
-            await axios.post('http://localhost:5000/api/expenses', formData);
+            await axios.post('https://al-hilaal-vercel-server.vercel.app/api/expenses', formData);
             setFormData({ title: '', amount: '', category: 'Agabka Dugsiga', notes: '' });
             fetchExpenses(); // Cusbooneysii miiska
             alert("Kharashka waa la keydiyey!");

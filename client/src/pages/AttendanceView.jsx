@@ -11,7 +11,7 @@ import {
   Filter
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://al-hilaal-vercel-server.vercel.app/api';
 
 const AttendanceView = () => {
   const [report, setReport] = useState([]);

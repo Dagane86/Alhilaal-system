@@ -16,7 +16,7 @@ const StudentList = () => {
     const fetchStudents = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('http://localhost:5000/api/students');
+            const res = await axios.get('https://al-hilaal-vercel-server.vercel.app/api/students');
             setStudents(res.data);
         } catch (err) {
             console.error(err);
@@ -34,7 +34,7 @@ const StudentList = () => {
     const handleDelete = async (id) => {
         if (window.confirm("هل أنت متأكد من حذف هذا الطالب؟")) {
             try {
-                await axios.delete(`http://localhost:5000/api/students/${id}`);
+                await axios.delete(`https://al-hilaal-vercel-server.vercel.app/api/students/${id}`);
                 toast.success("تم حذف الطالب بنجاح!");
                 fetchStudents();
             } catch (err) {

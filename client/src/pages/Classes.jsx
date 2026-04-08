@@ -7,7 +7,7 @@ const Classes = () => {
     const [newClass, setNewClass] = useState({ class_name: '', teacher_id: '', shift: 'الصباح', capacity: 0 });
     const [editingId, setEditingId] = useState(null);
 
-    const API_URL = 'http://localhost:5000/api';
+    const API_URL = 'https://al-hilaal-vercel-server.vercel.app/api';
 
     const fetchData = async () => {
         try {

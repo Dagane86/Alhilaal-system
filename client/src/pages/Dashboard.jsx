@@ -25,8 +25,8 @@ const Dashboard = () => {
   const loadData = async () => {
     try {
       const [res, extraRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/dashboard"),
-        axios.get("http://localhost:5000/api/dashboard/extra")
+        axios.get("https://al-hilaal-vercel-server.vercel.app/api/dashboard"),
+        axios.get("https://al-hilaal-vercel-server.vercel.app/api/dashboard/extra")
       ]);
       setData(res.data);
       setExtra(extraRes.data);

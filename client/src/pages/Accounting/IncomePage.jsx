@@ -26,7 +26,7 @@ const IncomePage = () => {
     new Date().toLocaleString("default", { month: "long", year: "numeric" })
   );
 
-  const API_URL = "http://localhost:5000/api";
+  const API_URL = "https://al-hilaal-vercel-server.vercel.app/api";
 
   const today = new Date().toLocaleDateString();
   const currentMonth = new Date().toLocaleString("default", {
